@@ -1,6 +1,6 @@
 ﻿namespace CommandDP;
 
-internal class Program
+internal class CommandDP
 {
     static void Main(string[] args)
     {
