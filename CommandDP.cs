@@ -20,6 +20,7 @@ internal class CommandDP
 
             - u can parametrize an object with a command, in next sample we parametrized the remote controll with lightOnCommand, then lightOffCommand
                 the remote controller slot object didn't care what command object it had, as long as it implements the command interface
+        * u can add undo() functionality
          */
         Console.WriteLine("Command Design Pattern!");
         var livingRoomLight = new Light("Living room");
@@ -38,7 +39,10 @@ internal class CommandDP
         
         
         remoteControll.OnSlotPressed(0);
+        remoteControll.UndoButtonPressed();
         remoteControll.OffSlotPressed(0);
+        remoteControll.UndoButtonPressed();
+
 
         remoteControll.OnSlotPressed(1);
         remoteControll.OffSlotPressed(1);
@@ -51,6 +55,7 @@ internal class RemoteControll
 {
     private ICommand[] _onCommands;
     private ICommand[] _offCommands;
+    private ICommand _undoCommand;
 
     //takes a command 
     //sets its 
@@ -64,6 +69,7 @@ internal class RemoteControll
             _onCommands[i] = new NoCommand();
             _offCommands[i] = new NoCommand();
         }
+        _undoCommand = new NoCommand();
     }
     internal void SetCommand(int slotNumber, ICommand onCommand, ICommand offCommand)
     {
@@ -71,8 +77,19 @@ internal class RemoteControll
         _offCommands[slotNumber] = offCommand;
     }
 
-    internal void OnSlotPressed(int slotNumber) => _onCommands[slotNumber].Execute();
-    internal void OffSlotPressed(int slotNumber) => _offCommands[slotNumber].Execute();
+    internal void OnSlotPressed(int slotNumber)
+    {
+        _onCommands[slotNumber].Execute();
+        _undoCommand = _onCommands[slotNumber];
+    }
+
+    internal void OffSlotPressed(int slotNumber)
+    {
+        _offCommands[slotNumber].Execute();
+        _undoCommand = _offCommands[slotNumber];
+    }
+
+    internal void UndoButtonPressed() => _undoCommand.Undo();
 
     public override string ToString()
     {
@@ -94,10 +111,13 @@ internal class RemoteControll
 internal interface ICommand
 {
     void Execute();
+    void Undo();
 }
 internal class NoCommand : ICommand
 {
     public void Execute() => Console.WriteLine("No Command assigned yet...");
+
+    public void Undo() => Console.WriteLine("No Command assigned yet...");
 }
 //concrete command class
 //defines a binding between an action and a receiver. the invoker makes a request by calling execute()
@@ -115,6 +135,11 @@ internal class LightOnCommand : ICommand
         //receiver.action()
         _light.LightOn();
     }
+
+    public void Undo()
+    {
+        _light.LightOff();
+    }
 }
 //concrete command class
 internal class LightOffCommand : ICommand
@@ -128,6 +153,11 @@ internal class LightOffCommand : ICommand
     public void Execute()
     {
         _light.LightOff();
+    }
+
+    public void Undo()
+    {
+        _light.LightOn();
     }
 }
 
