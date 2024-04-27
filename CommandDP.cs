@@ -1,4 +1,6 @@
-﻿namespace CommandDP;
+﻿using System.Text;
+
+namespace CommandDP;
 
 internal class CommandDP
 {
@@ -17,18 +19,29 @@ internal class CommandDP
                 they just know what if they call Execute() method, their request will be serviced.
 
             - u can parametrize an object with a command, in next sample we parametrized the remote controll with lightOnCommand, then lightOffCommand
-                the remote controller slot object didn't care what command object it had, as long as it implements the command interface0
+                the remote controller slot object didn't care what command object it had, as long as it implements the command interface
          */
         Console.WriteLine("Command Design Pattern!");
-        var light = new Light();
-        var lightOnCommand = new LightOnCommand(light);
-        var lightOffCommand = new LightOffCommand(light);    
+        var livingRoomLight = new Light("Living room");
+        var livingRoomLightOnCommand = new LightOnCommand(livingRoomLight);
+        var livingRoomLightOffCommand = new LightOffCommand(livingRoomLight);
+
+        var kitchenLight = new Light("Kitchen");
+        var kitchenLightOnCommand = new LightOnCommand(kitchenLight);
+        var kitchenLightOffCommand = new LightOffCommand(kitchenLight);
         RemoteControll remoteControll = new RemoteControll();
 
-        remoteControll.SetCommand(lightOnCommand);
-        remoteControll.SlotPressed();
-        remoteControll.SetCommand(lightOffCommand);
-        remoteControll.SlotPressed();
+        remoteControll.SetCommand(0, livingRoomLightOnCommand, livingRoomLightOffCommand);
+        remoteControll.SetCommand(1, kitchenLightOnCommand, kitchenLightOffCommand);
+
+        Console.WriteLine(remoteControll.ToString());
+        
+        
+        remoteControll.OnSlotPressed(0);
+        remoteControll.OffSlotPressed(0);
+
+        remoteControll.OnSlotPressed(1);
+        remoteControll.OffSlotPressed(1);
     }
 }
 
@@ -36,20 +49,44 @@ internal class CommandDP
 //  holds a command and at some point asks the command to carry out a request by calling its execute() method
 internal class RemoteControll
 {
-    private  ICommand _slot;
+    private ICommand[] _onCommands;
+    private ICommand[] _offCommands;
 
     //takes a command 
     //sets its 
     //executes it
-
-    internal void SetCommand(ICommand command)
+    public RemoteControll()
     {
-        _slot = command;
+        _onCommands = new ICommand[7];
+        _offCommands = new ICommand[7];
+        for (int i = 0; i < 7; i++)
+        {
+            _onCommands[i] = new NoCommand();
+            _offCommands[i] = new NoCommand();
+        }
+    }
+    internal void SetCommand(int slotNumber, ICommand onCommand, ICommand offCommand)
+    {
+        _onCommands[slotNumber] = onCommand;
+        _offCommands[slotNumber] = offCommand;
     }
 
-    internal void SlotPressed()
+    internal void OnSlotPressed(int slotNumber) => _onCommands[slotNumber].Execute();
+    internal void OffSlotPressed(int slotNumber) => _offCommands[slotNumber].Execute();
+
+    public override string ToString()
     {
-        _slot.Execute();
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < 7; i++)
+        {
+            stringBuilder.AppendFormat(
+                "Remote Slot Number {0} : OnCommand [{1}], OffCommand [{2}] ",
+                i,
+                _onCommands[i].GetType().Name,
+                _offCommands[i].GetType().Name);
+            stringBuilder.AppendLine();
+        }
+        return stringBuilder.ToString();
     }
 }
 
@@ -57,6 +94,10 @@ internal class RemoteControll
 internal interface ICommand
 {
     void Execute();
+}
+internal class NoCommand : ICommand
+{
+    public void Execute() => Console.WriteLine("No Command assigned yet...");
 }
 //concrete command class
 //defines a binding between an action and a receiver. the invoker makes a request by calling execute()
@@ -91,8 +132,13 @@ internal class LightOffCommand : ICommand
 }
 
 //reciever
-internal class Light 
+internal class Light
 {
-    internal void LightOn() => Console.WriteLine("Lights On!!!");
-    internal void LightOff() => Console.WriteLine("Lights Off!!!");
+    string _room;
+    public Light(string room)
+    {
+        _room = room;   
+    }
+    internal void LightOn() => Console.WriteLine("{0} Lights On!!!", _room);
+    internal void LightOff() => Console.WriteLine("{0} Lights Off!!!", _room);
 }
